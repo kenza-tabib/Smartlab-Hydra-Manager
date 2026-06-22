@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -8,7 +9,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/machine_provider.dart';
 import '../../providers/maintenance_provider.dart';
 
-class MaintenanceFormScreen extends StatefulWidget {
+class MaintenanceFormScreen extends ConsumerStatefulWidget {
   final int? preselectedMachineId;
   final Maintenance? maintenance;
 
@@ -19,10 +20,10 @@ class MaintenanceFormScreen extends StatefulWidget {
   });
 
   @override
-  State<MaintenanceFormScreen> createState() => _MaintenanceFormScreenState();
+  ConsumerState<MaintenanceFormScreen> createState() => _MaintenanceFormScreenState();
 }
 
-class _MaintenanceFormScreenState extends State<MaintenanceFormScreen> {
+class _MaintenanceFormScreenState extends ConsumerState<MaintenanceFormScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _failureController;
   late final TextEditingController _solutionController;
@@ -41,9 +42,6 @@ class _MaintenanceFormScreenState extends State<MaintenanceFormScreen> {
     _type = m?.type ?? AppConstants.maintenanceTypeCorrective;
     _selectedMachineId = m?.machineId ?? widget.preselectedMachineId;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<MachineProvider>().loadMachines();
-    });
   }
 
   @override
@@ -74,20 +72,20 @@ class _MaintenanceFormScreenState extends State<MaintenanceFormScreen> {
 
     setState(() => _saving = true);
 
-    final auth = context.read<AuthProvider>();
-    final machineProvider = context.read<MachineProvider>();
-    final maintenanceProvider = context.read<MaintenanceProvider>();
+    final auth = ref.watch(authProvider);
+    final machineProv = ref.read(machineProvider.notifier);
+    final maintenanceProv = ref.read(maintenanceProvider.notifier);
     final dateStr = DateFormat('yyyy-MM-dd').format(_date);
 
     String? nextMaintenance;
     if (_type == AppConstants.maintenanceTypePreventive) {
       final machine =
-          await machineProvider.getMachine(_selectedMachineId!);
+          await machineProv.getMachine(_selectedMachineId!);
       if (machine != null) {
         final next = _date.add(Duration(days: machine.maintenanceFrequency));
         nextMaintenance = DateFormat('yyyy-MM-dd').format(next);
 
-        await machineProvider.updateMachine(machine.copyWith(
+        await machineProv.updateMachine(machine.copyWith(
           lastMaintenanceDate: dateStr,
           status: AppConstants.statusOperational,
         ));
@@ -106,9 +104,9 @@ class _MaintenanceFormScreenState extends State<MaintenanceFormScreen> {
     );
 
     if (widget.maintenance != null) {
-      await maintenanceProvider.updateMaintenance(maintenance);
+      await maintenanceProv.updateMaintenance(maintenance);
     } else {
-      await maintenanceProvider.addMaintenance(maintenance);
+      await maintenanceProv.addMaintenance(maintenance);
     }
 
     if (mounted) Navigator.pop(context);
@@ -116,7 +114,7 @@ class _MaintenanceFormScreenState extends State<MaintenanceFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final machines = context.watch<MachineProvider>().machines;
+    final machines = ref.watch(machineProvider).value ?? [];
 
     return Scaffold(
       appBar: AppBar(

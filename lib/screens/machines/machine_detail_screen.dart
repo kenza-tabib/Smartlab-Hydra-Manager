@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -12,16 +13,16 @@ import '../../widgets/common_widgets.dart';
 import '../maintenance/maintenance_form_screen.dart';
 import 'machine_form_screen.dart';
 
-class MachineDetailScreen extends StatefulWidget {
+class MachineDetailScreen extends ConsumerStatefulWidget {
   final int machineId;
 
   const MachineDetailScreen({super.key, required this.machineId});
 
   @override
-  State<MachineDetailScreen> createState() => _MachineDetailScreenState();
+  ConsumerState<MachineDetailScreen> createState() => _MachineDetailScreenState();
 }
 
-class _MachineDetailScreenState extends State<MachineDetailScreen> {
+class _MachineDetailScreenState extends ConsumerState<MachineDetailScreen> {
   Machine? _machine;
   bool _loading = true;
 
@@ -86,7 +87,7 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isAdmin = context.watch<AuthProvider>().isAdmin;
+    final isAdmin = ref.watch(authProvider).isAdmin;
     final alert = _getMaintenanceAlert();
 
     return Scaffold(
@@ -238,28 +239,28 @@ class _InfoTile extends StatelessWidget {
   }
 }
 
-class _MaintenanceHistory extends StatefulWidget {
+class _MaintenanceHistory extends ConsumerStatefulWidget {
   final int machineId;
 
   const _MaintenanceHistory({required this.machineId});
 
   @override
-  State<_MaintenanceHistory> createState() => _MaintenanceHistoryState();
+  ConsumerState<_MaintenanceHistory> createState() => _MaintenanceHistoryState();
 }
 
-class _MaintenanceHistoryState extends State<_MaintenanceHistory> {
+class _MaintenanceHistoryState extends ConsumerState<_MaintenanceHistory> {
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await context.read<MaintenanceProvider>().loadMaintenances();
+      await ref.read(maintenanceProvider.notifier).loadMaintenances();
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-      future: context.read<MaintenanceProvider>().getByMachine(widget.machineId),
+      future: ref.read(maintenanceProvider.notifier).getByMachine(widget.machineId),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/theme/app_theme.dart';
@@ -8,31 +9,26 @@ import '../../widgets/common_widgets.dart';
 import 'machine_detail_screen.dart';
 import 'machine_form_screen.dart';
 
-class MachineListScreen extends StatefulWidget {
+class MachineListScreen extends ConsumerStatefulWidget {
   const MachineListScreen({super.key});
 
   @override
-  State<MachineListScreen> createState() => _MachineListScreenState();
+  ConsumerState<MachineListScreen> createState() => _MachineListScreenState();
 }
 
-class _MachineListScreenState extends State<MachineListScreen> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<MachineProvider>().loadMachines();
-    });
-  }
+class _MachineListScreenState extends ConsumerState<MachineListScreen> {
+
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<MachineProvider>();
-    final isAdmin = context.watch<AuthProvider>().isAdmin;
+    final provider = ref.watch(machineProvider);
+    final notifier = ref.watch(machineProvider.notifier);
+    final isAdmin = ref.watch(authProvider).isAdmin;
 
     return Scaffold(
       body: provider.isLoading
           ? const Center(child: CircularProgressIndicator())
-          : provider.machines.isEmpty
+          : provider.value?.isEmpty ?? true
               ? EmptyState(
                   icon: Icons.precision_manufacturing_outlined,
                   message: 'Aucune machine enregistrée',
@@ -47,12 +43,13 @@ class _MachineListScreenState extends State<MachineListScreen> {
                       : null,
                 )
               : RefreshIndicator(
-                  onRefresh: provider.loadMachines,
+                  onRefresh: notifier.loadMachines,
                   child: ListView.builder(
                     padding: const EdgeInsets.all(16),
-                    itemCount: provider.machines.length,
+                    itemCount: provider.value?.length ?? 0,
                     itemBuilder: (context, index) {
-                      final machine = provider.machines[index];
+                      final machine = provider.value?[index];
+                      if (machine == null) return const SizedBox.shrink();
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
                         child: ListTile(

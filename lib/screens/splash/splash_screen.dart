@@ -1,38 +1,53 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:smart_lab_hydra_manager/screens/home_screen.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-    _init();
-  }
-
-  Future<void> _init() async {
-    final auth = context.read<AuthProvider>();
-    await auth.checkSession();
-    if (!mounted) return;
-
-    if (auth.isLoggedIn) {
-      Navigator.pushReplacementNamed(context, '/home');
-    } else {
-      Navigator.pushReplacementNamed(context, '/login');
-    }
-  }
+class _SplashScreenState extends ConsumerState<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = ref.watch(authProvider);
+    if (auth.isLoggedIn) {
+      return const HomeScreen();
+    }else if (auth.error != null) {
+      return Scaffold(
+        backgroundColor: AppColors.primary,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                size: 64,
+                color: Colors.white,
+              ),
+              const SizedBox(height: 24),
+              Text(
+                auth.error!,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    } else {
+      
+    
     return Scaffold(
       backgroundColor: AppColors.primary,
       body: Center(
@@ -68,4 +83,4 @@ class _SplashScreenState extends State<SplashScreen> {
       ),
     );
   }
-}
+}}

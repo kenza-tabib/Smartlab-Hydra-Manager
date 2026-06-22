@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/theme/app_theme.dart';
@@ -7,35 +8,36 @@ import '../../providers/machine_provider.dart';
 import '../../providers/maintenance_provider.dart';
 import '../../widgets/common_widgets.dart';
 
-class DashboardScreen extends StatefulWidget {
+class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
 
   @override
-  State<DashboardScreen> createState() => _DashboardScreenState();
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<MachineProvider>().loadMachines();
-      context.read<MaintenanceProvider>().loadMaintenances();
-      context.read<MaintenanceProvider>().loadChartData();
+      ref.read(machineProvider.notifier).loadMachines();
+      ref.read(maintenanceProvider.notifier).loadMaintenances();
+      ref.read(maintenanceProvider.notifier).loadChartData();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final machineProvider = context.watch<MachineProvider>();
-    final maintenanceProvider = context.watch<MaintenanceProvider>();
-    final alerts = machineProvider.alerts;
+    final machineProv = ref.watch(machineProvider).value ?? [];
+    final machineNotifier = ref.watch(machineProvider.notifier);
+    final maintenanceProv = ref.watch(maintenanceProvider);
+    final alerts = ref.watch(machineProvider.notifier).alerts;
 
     return RefreshIndicator(
       onRefresh: () async {
-        await machineProvider.loadMachines();
-        await maintenanceProvider.loadMaintenances();
-        await maintenanceProvider.loadChartData();
+        await ref.read(machineProvider.notifier).loadMachines();
+        await ref.read(maintenanceProvider.notifier).loadMaintenances();
+        await ref.read(maintenanceProvider.notifier).loadChartData();
       },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -60,25 +62,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
               children: [
                 StatCard(
                   title: 'Machines',
-                  value: '${machineProvider.totalCount}',
+                  value: '${machineProv.length}',
                   icon: Icons.precision_manufacturing_outlined,
                   color: AppColors.primary,
                 ),
                 StatCard(
                   title: 'Opérationnelles',
-                  value: '${machineProvider.operationalCount}',
+                  value: '${machineNotifier.operationalCount}',
                   icon: Icons.check_circle_outline,
                   color: AppColors.success,
                 ),
                 StatCard(
                   title: 'Maintenance',
-                  value: '${machineProvider.maintenanceCount}',
+                  value: '${machineNotifier.maintenanceCount}',
                   icon: Icons.build_outlined,
                   color: AppColors.warning,
                 ),
                 StatCard(
                   title: 'Interventions',
-                  value: '${maintenanceProvider.totalCount}',
+                  value: '${maintenanceProv.totalCount}',
                   icon: Icons.engineering_outlined,
                   color: AppColors.secondary,
                 ),
@@ -116,9 +118,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 padding: const EdgeInsets.all(16),
                 child: SizedBox(
                   height: 200,
-                  child: maintenanceProvider.monthlyData.isEmpty
+                  child: maintenanceProv.monthlyData.isEmpty
                       ? const Center(child: Text('Aucune donnée'))
-                      : _MonthlyChart(data: maintenanceProvider.monthlyData),
+                      : _MonthlyChart(data: maintenanceProv.monthlyData),
                 ),
               ),
             ),
@@ -135,9 +137,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 padding: const EdgeInsets.all(16),
                 child: SizedBox(
                   height: 200,
-                  child: maintenanceProvider.failureData.isEmpty
+                  child: maintenanceProv.failureData.isEmpty
                       ? const Center(child: Text('Aucune panne enregistrée'))
-                      : _FailureChart(data: maintenanceProvider.failureData),
+                      : _FailureChart(data: maintenanceProv.failureData),
                 ),
               ),
             ),

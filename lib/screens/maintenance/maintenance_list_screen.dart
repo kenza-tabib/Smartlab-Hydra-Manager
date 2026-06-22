@@ -1,23 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:smart_lab_hydra_manager/providers/machine_provider.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
-import '../../providers/machine_provider.dart';
 import '../../providers/maintenance_provider.dart';
 import '../../widgets/common_widgets.dart';
 import '../reports/reports_screen.dart';
 import 'maintenance_form_screen.dart';
 
-class MaintenanceListScreen extends StatefulWidget {
+class MaintenanceListScreen extends ConsumerStatefulWidget {
   const MaintenanceListScreen({super.key});
 
   @override
-  State<MaintenanceListScreen> createState() => _MaintenanceListScreenState();
+  ConsumerState<MaintenanceListScreen> createState() => _MaintenanceListScreenState();
 }
 
-class _MaintenanceListScreenState extends State<MaintenanceListScreen> {
+class _MaintenanceListScreenState extends ConsumerState<MaintenanceListScreen> {
   final Map<int, String> _machineNames = {};
 
   @override
@@ -27,12 +28,12 @@ class _MaintenanceListScreenState extends State<MaintenanceListScreen> {
   }
 
   Future<void> _load() async {
-    final machineProvider = context.read<MachineProvider>();
-    final maintenanceProvider = context.read<MaintenanceProvider>();
-    await machineProvider.loadMachines();
-    await maintenanceProvider.loadMaintenances();
+    final machine = ref.read(machineProvider) ;
+      final maintenanceProv = ref.read(maintenanceProvider.notifier);
+    await ref.read(machineProvider.notifier).loadMachines();
+    await maintenanceProv.loadMaintenances();
 
-    for (final m in machineProvider.machines) {
+    for (final m in machine.value ?? []) {
       _machineNames[m.id!] = m.name;
     }
     if (mounted) setState(() {});
@@ -40,12 +41,12 @@ class _MaintenanceListScreenState extends State<MaintenanceListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<MaintenanceProvider>();
+    final maintenanceProv = ref.read(maintenanceProvider);
 
     return Scaffold(
-      body: provider.isLoading
+      body: maintenanceProv.isLoading
           ? const Center(child: CircularProgressIndicator())
-          : provider.maintenances.isEmpty
+          : maintenanceProv.maintenances.isEmpty
               ? EmptyState(
                   icon: Icons.build_outlined,
                   message: 'Aucune intervention enregistrée',
@@ -61,9 +62,9 @@ class _MaintenanceListScreenState extends State<MaintenanceListScreen> {
                   onRefresh: _load,
                   child: ListView.builder(
                     padding: const EdgeInsets.all(16),
-                    itemCount: provider.maintenances.length,
+                    itemCount: maintenanceProv.maintenances.length,
                     itemBuilder: (context, index) {
-                      final m = provider.maintenances[index];
+                      final m = maintenanceProv.maintenances[index];
                       final machineName =
                           _machineNames[m.machineId] ?? 'Machine #${m.machineId}';
 

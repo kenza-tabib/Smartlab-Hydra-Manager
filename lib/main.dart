@@ -20,22 +20,16 @@ class SmartLabApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => MaintenanceProvider()),
-      ],
-      child: MaterialApp(
-        title: 'Smart Lab Hydra Manager',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        initialRoute: AppRoutes.splash,
-        routes: {
-          AppRoutes.splash: (_) => const SplashScreen(),
-          AppRoutes.login: (_) => const LoginScreen(),
-          AppRoutes.home: (_) => const HomeScreen(),
-        },
-      ),
+    return MaterialApp(
+      title: 'Smart Lab Hydra Manager',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.lightTheme,
+      initialRoute: AppRoutes.splash,
+      routes: {
+        AppRoutes.splash: (_) => const SplashScreen(),
+        AppRoutes.login: (_) => const LoginScreen(),
+        AppRoutes.home: (_) => const HomeScreen(),
+      },
     );
   }
 }

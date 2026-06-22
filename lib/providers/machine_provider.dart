@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/constants/app_constants.dart';
 import '../database/database_helper.dart';
@@ -45,29 +46,29 @@ List<MaintenanceAlert> computeMaintenanceAlerts(List<Machine> machines) {
   return alerts;
 }
 
-class MachineProvider extends ChangeNotifier {
+class MachineProvider extends Notifier<AsyncValue<List<Machine>>> {
+  @override
+  AsyncValue<List<Machine>> build()   {
+     loadMachines();
+    return AsyncValue.loading();
+  }
   final DatabaseHelper _db = DatabaseHelper.instance;
 
-  List<Machine> _machines = [];
-  bool _isLoading = false;
 
-  List<Machine> get machines => _machines;
-  bool get isLoading => _isLoading;
 
-  int get totalCount => _machines.length;
+  int get totalCount => state.value?.length ?? 0;
   int get operationalCount =>
-      _machines.where((m) => m.status == AppConstants.statusOperational).length;
+      state.value?.where((m) => m.status == AppConstants.statusOperational).length ?? 0;
   int get maintenanceCount =>
-      _machines.where((m) => m.status == AppConstants.statusMaintenance).length;
+      state.value?.where((m) => m.status == AppConstants.statusMaintenance).length ?? 0;
 
-  List<MaintenanceAlert> get alerts => computeMaintenanceAlerts(_machines);
+  List<MaintenanceAlert> get alerts => computeMaintenanceAlerts(state.value ?? []);
 
   Future<void> loadMachines() async {
-    _isLoading = true;
-    notifyListeners();
-    _machines = await _db.getMachines();
-    _isLoading = false;
-    notifyListeners();
+
+    final machines = await _db.getMachines();
+    state = AsyncValue.data(machines);
+
   }
 
   Future<Machine?> getMachine(int id) => _db.getMachine(id);
@@ -87,3 +88,7 @@ class MachineProvider extends ChangeNotifier {
     await loadMachines();
   }
 }
+
+final machineProvider = NotifierProvider<MachineProvider, AsyncValue<List<Machine>>>(
+  () => MachineProvider(),
+);
