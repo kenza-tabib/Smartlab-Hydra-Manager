@@ -1,0 +1,89 @@
+import 'package:flutter/foundation.dart';
+
+import '../core/constants/app_constants.dart';
+import '../database/database_helper.dart';
+import '../models/machine.dart';
+
+class MaintenanceAlert {
+  final Machine machine;
+  final DateTime nextDate;
+  final bool isOverdue;
+  final int daysRemaining;
+
+  const MaintenanceAlert({
+    required this.machine,
+    required this.nextDate,
+    required this.isOverdue,
+    required this.daysRemaining,
+  });
+}
+
+List<MaintenanceAlert> computeMaintenanceAlerts(List<Machine> machines) {
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final alerts = <MaintenanceAlert>[];
+
+  for (final machine in machines) {
+    if (machine.lastMaintenanceDate == null) continue;
+
+    final lastDate = DateTime.parse(machine.lastMaintenanceDate!);
+    final nextDate = lastDate.add(Duration(days: machine.maintenanceFrequency));
+    final nextDay = DateTime(nextDate.year, nextDate.month, nextDate.day);
+    final daysRemaining = nextDay.difference(today).inDays;
+
+    if (daysRemaining <= AppConstants.alertDaysBefore) {
+      alerts.add(MaintenanceAlert(
+        machine: machine,
+        nextDate: nextDay,
+        isOverdue: daysRemaining < 0,
+        daysRemaining: daysRemaining,
+      ));
+    }
+  }
+
+  alerts.sort((a, b) => a.daysRemaining.compareTo(b.daysRemaining));
+  return alerts;
+}
+
+class MachineProvider extends ChangeNotifier {
+  final DatabaseHelper _db = DatabaseHelper.instance;
+
+  List<Machine> _machines = [];
+  bool _isLoading = false;
+
+  List<Machine> get machines => _machines;
+  bool get isLoading => _isLoading;
+
+  int get totalCount => _machines.length;
+  int get operationalCount =>
+      _machines.where((m) => m.status == AppConstants.statusOperational).length;
+  int get maintenanceCount =>
+      _machines.where((m) => m.status == AppConstants.statusMaintenance).length;
+
+  List<MaintenanceAlert> get alerts => computeMaintenanceAlerts(_machines);
+
+  Future<void> loadMachines() async {
+    _isLoading = true;
+    notifyListeners();
+    _machines = await _db.getMachines();
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  Future<Machine?> getMachine(int id) => _db.getMachine(id);
+
+  Future<void> addMachine(Machine machine) async {
+    await _db.insertMachine(machine);
+    await loadMachines();
+  }
+
+  Future<void> updateMachine(Machine machine) async {
+    await _db.updateMachine(machine);
+    await loadMachines();
+  }
+
+  Future<void> deleteMachine(int id) async {
+    await _db.deleteMachine(id);
+    await loadMachines();
+  }
+}

@@ -1,0 +1,33 @@
+name: smart_lab_hydra_manager
+description: "Smart Lab Hydra Manager - Gestion des machines HydraFacial"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.8
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  sqflite: ^2.4.2
+  path: ^1.9.1
+  provider: ^6.1.5
+  shared_preferences: ^2.5.3
+  intl: ^0.20.2
+  pdf: ^3.11.3
+  path_provider: ^2.1.5
+  share_plus: ^11.0.0
+  fl_chart: ^0.70.2
+  flutter_riverpod: ^3.3.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/icons/
