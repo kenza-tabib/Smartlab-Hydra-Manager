@@ -98,6 +98,7 @@ class _MachineListScreenState extends ConsumerState<MachineListScreen> {
                 ),
       floatingActionButton: isAdmin
           ? FloatingActionButton(
+              heroTag: 'machine_fab',
               onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const MachineFormScreen()),

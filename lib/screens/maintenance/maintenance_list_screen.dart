@@ -119,6 +119,7 @@ class _MaintenanceListScreenState extends ConsumerState<MaintenanceListScreen> {
                   ),
                 ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'maintenance_fab',
         onPressed: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const MaintenanceFormScreen()),
